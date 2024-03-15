@@ -1,0 +1,55 @@
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+v.Local.sFile.Declare(String)
+v.Local.bCheck.Declare(Boolean)
+v.Local.iRet.Declare(Long)
+v.Local.sTemp.Declare(String)
+'coded by SFF for Global Shop internal to publish, 
+'this helps customers who always make comopents to inventory based on a global rule, 
+'set up users in defined group and any time they schedule a BOM work order from SFC > FILE > NEW > BOM, then it will check the make components to inventory if user is part of defined group in config file. 
+'set up default user group in case file does not exist. 
+
+
+'check if file exists first and set default if not already
+f.Intrinsic.String.Build("{0}\GCG_5880.cfg",v.Caller.FilesDir,v.Local.sFile)
+f.Intrinsic.File.Exists(v.Local.sFile,v.Local.bCheck)
+
+f.Intrinsic.Control.If(v.Local.bCheck,=,False)
+	'if File does not exist, then create and set default to MTAWOGEN
+	f.Intrinsic.File.String2File(v.Local.sFile,"MTAWOGEN")
+	v.Local.bCheck.Set(true)
+f.Intrinsic.Control.EndIf
+
+
+'now just check the box based on USER GROUP and Matching User accordingly
+f.Intrinsic.Control.If(v.Local.bCheck,=,True)
+	f.Intrinsic.File.File2String(v.Local.sFile,v.Local.sTemp)
+	f.Intrinsic.String.Split(v.Local.sTemp,v.Ambient.NewLine,v.Local.sTemp)
+	f.Global.Security.IsInGroup(v.Caller.User,v.Local.sTemp(0).Trim,v.Caller.CompanyCode,v.Local.bCheck)
+	f.Intrinsic.Control.If(v.Local.bCheck,=,True)
+		v.Passed.000018.Set("Y")
+	f.Intrinsic.Control.Else
+		v.Passed.000018.Set("N")
+	f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: testoverrideatbmj501.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Main.End
+
+Program.Sub.Comments.Start
+${$0$}$$}$$}$12:00:00 AM$}$False
+Program.Sub.Comments.End
